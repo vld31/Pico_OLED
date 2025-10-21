@@ -35,7 +35,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Pico_OLED Pico_OLED.cpp )
+add_executable(Pico_OLED Pico_OLED.cpp)
 
 pico_set_program_name(Pico_OLED "Pico_OLED")
 pico_set_program_version(Pico_OLED "0.1")
@@ -46,7 +46,9 @@ pico_enable_stdio_usb(Pico_OLED 0)
 
 # Add the standard library to the build
 target_link_libraries(Pico_OLED
-        pico_stdlib)
+pico_stdlib
+    hardware_i2c
+    )
 
 # Add the standard include files to the build
 target_include_directories(Pico_OLED PRIVATE
@@ -61,4 +63,40 @@ target_link_libraries(Pico_OLED
         )
 
 pico_add_extra_outputs(Pico_OLED)
+
+set(U8G2_DIR ${CMAKE_CURRENT_LIST_DIR}/lib/u8g2/csrc)
+
+target_include_directories(Pico_OLED PRIVATE ${U8G2_DIR})
+
+set(U8G2_SRC
+  ${U8G2_DIR}/u8g2_bitmap.c
+  ${U8G2_DIR}/u8g2_box.c
+  ${U8G2_DIR}/u8g2_buffer.c
+  ${U8G2_DIR}/u8g2_circle.c
+  ${U8G2_DIR}/u8g2_cleardisplay.c
+  ${U8G2_DIR}/u8g2_d_memory.c
+  ${U8G2_DIR}/u8g2_d_setup.c
+  ${U8G2_DIR}/u8g2_font.c
+  ${U8G2_DIR}/u8g2_fonts.c
+  ${U8G2_DIR}/u8g2_hvline.c
+  ${U8G2_DIR}/u8g2_input_value.c
+  ${U8G2_DIR}/u8g2_intersection.c
+  ${U8G2_DIR}/u8g2_kerning.c
+  ${U8G2_DIR}/u8g2_line.c
+  ${U8G2_DIR}/u8g2_ll_hvline.c
+  ${U8G2_DIR}/u8g2_message.c
+  ${U8G2_DIR}/u8g2_polygon.c
+  ${U8G2_DIR}/u8g2_selection_list.c
+  ${U8G2_DIR}/u8g2_setup.c
+  ${U8G2_DIR}/u8x8_8x8.c
+  ${U8G2_DIR}/u8x8_byte.c
+  ${U8G2_DIR}/u8x8_cad.c
+  ${U8G2_DIR}/u8x8_d_ssd1306_128x64_noname.c
+  ${U8G2_DIR}/u8x8_display.c
+  ${U8G2_DIR}/u8x8_fonts.c
+  ${U8G2_DIR}/u8x8_gpio.c
+  ${U8G2_DIR}/u8x8_setup.c
+  ${U8G2_DIR}/u8x8_string.c
+)
+target_sources(Pico_OLED PRIVATE ${U8G2_SRC})
 

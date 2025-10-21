@@ -1,53 +1,71 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
-#include "hardware/spi.h"
 #include "hardware/i2c.h"
+#include "u8x8.h"
+#include "u8g2.h"
+#define I2C_PORT  i2c0
+#define I2C_SDA   4
+#define I2C_SCL   5
+#define OLED_ADDR 0x3C 
 
-// SPI Defines
-// We are going to use SPI 0, and allocate it to the following GPIO pins
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-#define SPI_PORT spi0
-#define PIN_MISO 16
-#define PIN_CS   17
-#define PIN_SCK  18
-#define PIN_MOSI 19
+static u8g2_t u8g2;
 
-// I2C defines
-// This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-#define I2C_PORT i2c0
-#define I2C_SDA 8
-#define I2C_SCL 9
+static uint8_t i2c_buffer[32];
+static uint8_t i2c_len;
+static uint8_t u8x8_byte_pico_i2c(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr) {
+    switch (msg) {
+        case U8X8_MSG_BYTE_INIT:
+            return 1; 
+        case U8X8_MSG_BYTE_START_TRANSFER:
+            i2c_len = 0;
+            return 1;
+        case U8X8_MSG_BYTE_SEND: {
+            uint8_t *p = (uint8_t *)arg_ptr;
+            while (arg_int--) {
+                if (i2c_len >= sizeof i2c_buffer) return 0;
+                i2c_buffer[i2c_len++] = *p++;
+            }
+            return 1;
+        }
+        case U8X8_MSG_BYTE_END_TRANSFER: {
+            uint8_t addr7 = u8x8_GetI2CAddress(u8x8) >> 1;
+            int w = i2c_write_blocking(I2C_PORT, addr7, i2c_buffer, i2c_len, false);
+            return (w == (int)i2c_len) ? 1 : 0;
+        }
+        default:
+            return 1;
+    }
+}
 
-
-
-int main()
-{
+static uint8_t u8x8_gpio_and_delay_pico(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr) {
+    switch (msg) {
+        case U8X8_MSG_GPIO_AND_DELAY_INIT: return 1;
+        case U8X8_MSG_DELAY_MILLI:         sleep_ms(arg_int); return 1;
+        case U8X8_MSG_DELAY_10MICRO:       sleep_us(10);      return 1;
+        case U8X8_MSG_DELAY_100NANO:       return 1;
+        case U8X8_MSG_GPIO_RESET:          return 1; 
+        default:                           return 1;
+    }
+}
+int main() {
     stdio_init_all();
-
-    // SPI initialisation. This example will use SPI at 1MHz.
-    spi_init(SPI_PORT, 1000*1000);
-    gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
-    gpio_set_function(PIN_CS,   GPIO_FUNC_SIO);
-    gpio_set_function(PIN_SCK,  GPIO_FUNC_SPI);
-    gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
     
-    // Chip select is active-low, so we'll initialise it to a driven-high state
-    gpio_set_dir(PIN_CS, GPIO_OUT);
-    gpio_put(PIN_CS, 1);
-    // For more examples of SPI use see https://github.com/raspberrypi/pico-examples/tree/master/spi
-
-    // I2C Initialisation. Using it at 400Khz.
-    i2c_init(I2C_PORT, 400*1000);
-    
+    i2c_init(I2C_PORT, 400 * 1000);
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
     gpio_pull_up(I2C_SDA);
     gpio_pull_up(I2C_SCL);
-    // For more examples of I2C use see https://github.com/raspberrypi/pico-examples/tree/master/i2c
-
+    
+    u8g2_Setup_ssd1306_i2c_128x64_noname_f(&u8g2, U8G2_R0, u8x8_byte_pico_i2c, u8x8_gpio_and_delay_pico);
+    u8g2_SetI2CAddress(&u8g2, OLED_ADDR << 1); 
+    u8g2_InitDisplay(&u8g2);
+    u8g2_SetPowerSave(&u8g2, 0);
+    
+    u8g2_ClearBuffer(&u8g2);
+    u8g2_SetFont(&u8g2, u8g2_font_6x10_tf); 
+    u8g2_DrawStr(&u8g2, 0, 12, "Hello World");
+    u8g2_SendBuffer(&u8g2);
     while (true) {
-        printf("Hello, world!\n");
         sleep_ms(1000);
     }
 }
