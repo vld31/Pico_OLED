@@ -35,10 +35,20 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Pico_OLED Pico_OLED.cpp)
+add_executable(Pico_OLED Pico_OLED.cpp
+                QrCode/qrcodegen.cpp)
 
 pico_set_program_name(Pico_OLED "Pico_OLED")
 pico_set_program_version(Pico_OLED "0.1")
+
+set_source_files_properties(QrCode/qrcodegen.cpp
+    PROPERTIES COMPILE_FLAGS "-fexceptions -funwind-tables")
+
+# << add: let main find qrcodegen.hpp if you include it from there
+target_include_directories(Pico_OLED PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/QrCode
+)
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(Pico_OLED 1)
