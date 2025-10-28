@@ -4,6 +4,8 @@
 #include "u8x8.h"
 #include "u8g2.h"
 #include "QrCode/qrcodegen.hpp"
+#include "pico_httpd.h"
+
 #define I2C_PORT  i2c0
 #define I2C_SDA   4
 #define I2C_SCL   5
@@ -79,7 +81,7 @@ static void drawqr(const QrCode &qr){
 }
 
 static void funcDrawQr(){
-    const char *text = "https://google.com";
+    const char *text = "https://www.google.com/";
     const QrCode qr  = QrCode::encodeText(text, QrCode::Ecc::LOW);
     drawqr(qr);
 }
@@ -99,6 +101,8 @@ int main() {
     u8g2_SetPowerSave(&u8g2, 0);
     
     funcDrawQr();
+
+    return pico_httpd_start();
     
     while (true) {
         tight_loop_contents();

@@ -30,16 +30,26 @@ include(pico_sdk_import.cmake)
 
 project(Pico_OLED C CXX ASM)
 
+#Pico and Laptop should be on the same network
+set(WIFI_SSID "WIFI Name") #Modify name to your network name
+set(WIFI_PASSWORD "WIFI Password") #Modify this to your network password
+
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
+
 
 # Add executable. Default name is the project name, version 0.1
 
 add_executable(Pico_OLED Pico_OLED.cpp
-                QrCode/qrcodegen.cpp)
+                QrCode/qrcodegen.cpp
+                pico_httpd.c
+                )
+
+
 
 pico_set_program_name(Pico_OLED "Pico_OLED")
 pico_set_program_version(Pico_OLED "0.1")
+
 
 set_source_files_properties(QrCode/qrcodegen.cpp
     PROPERTIES COMPILE_FLAGS "-fexceptions -funwind-tables")
@@ -56,8 +66,9 @@ pico_enable_stdio_usb(Pico_OLED 0)
 
 # Add the standard library to the build
 target_link_libraries(Pico_OLED
-pico_stdlib
+    pico_stdlib
     hardware_i2c
+    pico_cyw43_arch_lwip_poll
     )
 
 # Add the standard include files to the build
@@ -77,6 +88,13 @@ pico_add_extra_outputs(Pico_OLED)
 set(U8G2_DIR ${CMAKE_CURRENT_LIST_DIR}/lib/u8g2/csrc)
 
 target_include_directories(Pico_OLED PRIVATE ${U8G2_DIR})
+
+
+target_compile_definitions(Pico_OLED PRIVATE
+    WIFI_SSID=\"${WIFI_SSID}\"
+    WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
+    CYW43_HOST_NAME=\"picow\"
+)
 
 set(U8G2_SRC
   ${U8G2_DIR}/u8g2_bitmap.c
