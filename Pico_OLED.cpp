@@ -15,7 +15,7 @@
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
 
-static u8g2_t u8g2;
+u8g2_t u8g2;  // Make u8g2 non-static so Sound.h can access it
 
 static uint8_t i2c_buffer[32];
 static uint8_t i2c_len;
@@ -81,7 +81,7 @@ static void drawqr(const QrCode &qr){
     u8g2_SendBuffer(&u8g2);
 }
 
-static void funcDrawQr(){
+void funcDrawQr(){
     const char *text = "https://www.google.com/";
     const QrCode qr  = QrCode::encodeText(text, QrCode::Ecc::LOW);
     drawqr(qr);
