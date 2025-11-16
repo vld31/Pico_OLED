@@ -29,7 +29,6 @@ set(PICO_BOARD pico_w CACHE STRING "Board type")
 include(pico_sdk_import.cmake)
 
 project(Pico_OLED C CXX ASM)
-project(button_buzzer)
 
 #Pico and Laptop should be on the same network
 set(WIFI_SSID "WIFI Name") #Modify name to your network name
@@ -44,7 +43,6 @@ pico_sdk_init()
 add_executable(Pico_OLED Pico_OLED.cpp
                 QrCode/qrcodegen.cpp
                 pico_httpd.c
-                Sound.cpp
                 )
 
 
@@ -83,10 +81,10 @@ target_link_libraries(Pico_OLED
         hardware_spi
         hardware_i2c
         hardware_pwm
+        hardware_clocks
         )
 
 pico_add_extra_outputs(Pico_OLED)
-pico_add_extra_outputs(button_buzzer)
 
 set(U8G2_DIR ${CMAKE_CURRENT_LIST_DIR}/lib/u8g2/csrc)
 

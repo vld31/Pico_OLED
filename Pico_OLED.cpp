@@ -5,6 +5,7 @@
 #include "u8g2.h"
 #include "QrCode/qrcodegen.hpp"
 #include "pico_httpd.h"
+#include "Sound.h"
 
 #define I2C_PORT  i2c0
 #define I2C_SDA   4
@@ -101,10 +102,13 @@ int main() {
     u8g2_SetPowerSave(&u8g2, 0);
     
     funcDrawQr();
+    
+    sound_init();
 
-    return pico_httpd_start();
+    pico_httpd_start();
     
     while (true) {
+        sound_check_button();
         tight_loop_contents();
     }
 }
