@@ -42,7 +42,7 @@ pico_sdk_init()
 
 add_executable(Pico_OLED Pico_OLED.cpp
                 QrCode/qrcodegen.cpp
-                pico_httpd.c
+                Pico_Client.cpp
                 )
 
 

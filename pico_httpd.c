@@ -9,6 +9,8 @@
 #include <inttypes.h>
 #include <assert.h>
 
+#define STATIC_IP "192.168.1.100"
+
 static bool runtime_debug_enabled = false;
 
 bool pico_httpd_get_debug_flag(void) {
@@ -18,14 +20,8 @@ bool pico_httpd_get_debug_flag(void) {
 void pico_httpd_set_debug_flag(bool enabled) {
     runtime_debug_enabled = enabled;
 }
+
 static absolute_time_t wifi_connected_time;
-static bool led_on = false;
-
-// Forward declaration for LED control exposed via header
-void pico_httpd_set_led(bool on);
-
-// Minimal HTTP response buffer
-// TCP server state
 static struct tcp_pcb *http_listener;
 
 static err_t http_send_simple(struct tcp_pcb *tpcb, const char *body) {
@@ -54,16 +50,15 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
         tcp_close(tpcb);
         return ERR_OK;
     }
-    // Parse a very simple GET request and respond
-    // We ignore the path and always return a small status text
+
     u16_t payload_len = p->tot_len;
     tcp_recved(tpcb, payload_len);
     pbuf_free(p);
 
     char body[128];
     uint64_t uptime_s = absolute_time_diff_us(wifi_connected_time, get_absolute_time()) / 1000000ULL;
-    snprintf(body, sizeof(body), "Pico W HTTP OK\nLED=%s\nUptime=%" PRIu64 "s\n",
-             led_on ? "ON" : "OFF", uptime_s);
+    snprintf(body, sizeof(body), "Pico W HTTP OK\nUptime=%" PRIu64 "s\n", uptime_s);
+    
     http_send_simple(tpcb, body);
 
     // Close after response
@@ -82,6 +77,7 @@ static err_t http_accept(void *arg, struct tcp_pcb *newpcb, err_t err) {
 static void http_server_start(void) {
     http_listener = tcp_new_ip_type(IPADDR_TYPE_ANY);
     if (!http_listener) return;
+
     if (tcp_bind(http_listener, IP_ANY_TYPE, 80) != ERR_OK) {
         tcp_close(http_listener);
         http_listener = NULL;
@@ -109,28 +105,17 @@ static size_t get_mac_ascii(int idx, size_t chr_off, size_t chr_len, char *dest_
     return dest - dest_in;
 }
 
-// No CGI/SSI or mdns; keep things minimal
-
-// Minimal LED setter exposed to the rest of the app
-void pico_httpd_set_led(bool on) {
-    led_on = on;
-    cyw43_gpio_set(&cyw43_state, 0, led_on);
-}
-
-//int main() {
 int pico_httpd_start(void) {
-    stdio_init_all();
+    
     if (cyw43_arch_init()) {
         printf("failed to initialise\n");
         return 1;
     }
     cyw43_arch_enable_sta_mode();
 
-    char hostname[sizeof(CYW43_HOST_NAME) + 4];
-    memcpy(&hostname[0], CYW43_HOST_NAME, sizeof(CYW43_HOST_NAME) - 1);
-    get_mac_ascii(CYW43_HAL_MAC_WLAN0, 8, 4, &hostname[sizeof(CYW43_HOST_NAME) - 1]);
-    hostname[sizeof(hostname) - 1] = '\0';
-    netif_set_hostname(&cyw43_state.netif[CYW43_ITF_STA], hostname);
+    printf("Setting Static Ip: %s\n", STATIC_IP);
+    cyw43_arch_lwip_begin();
+    struct netif *netif = &cyw43_state.netif[CYW43_ITF_STA];
 
     printf("Connecting to WiFi...\n");
     if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
@@ -151,9 +136,8 @@ int pico_httpd_start(void) {
     while(true) {
 #if PICO_CYW43_ARCH_POLL
         cyw43_arch_poll();
-        //cyw43_arch_wait_for_work_until(led_time);
-#else
-//     
+        
+#else 
 
 #endif
     }

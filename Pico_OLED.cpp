@@ -1,11 +1,15 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
+#include "pico/cyw43_arch.h"
 #include "hardware/i2c.h"
 #include "u8x8.h"
 #include "u8g2.h"
 #include "QrCode/qrcodegen.hpp"
-#include "pico_httpd.h"
 #include "Sound.h"
+
+// Notification client functions
+extern void pico_client_init();
+extern void check_notification();
 
 #define I2C_PORT  i2c0
 #define I2C_SDA   4
@@ -15,7 +19,7 @@
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
 
-u8g2_t u8g2;  // Make u8g2 non-static so Sound.h can access it
+u8g2_t u8g2;  
 
 static uint8_t i2c_buffer[32];
 static uint8_t i2c_len;
@@ -105,10 +109,39 @@ int main() {
     
     sound_init();
 
-    pico_httpd_start();
+    // Initialize WiFi for notification client
+    printf("Initializing WiFi...\n");
+    if (cyw43_arch_init()) {
+        printf("WiFi init failed\n");
+        return 1;
+    }
+    cyw43_arch_enable_sta_mode();
+    
+    printf("Connecting to WiFi: %s\n", WIFI_SSID);
+    if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, 
+        CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+        printf("WiFi connection failed\n");
+        return 1;
+    }
+    printf("WiFi connected!\n");
+    
+    // Initialize notification client
+    pico_client_init();
+    
+    printf("System ready. Polling backend every 5s...\n");
+    
+    absolute_time_t last_check = get_absolute_time();
     
     while (true) {
         sound_check_button();
-        tight_loop_contents();
+        
+        // Poll backend every 5 seconds
+        if (absolute_time_diff_us(last_check, get_absolute_time()) > 5000000) {
+            check_notification();
+            last_check = get_absolute_time();
+        }
+        
+        cyw43_arch_poll();  // Process WiFi events
+        sleep_ms(10);
     }
 }
