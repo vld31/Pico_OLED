@@ -7,7 +7,7 @@
 #include "QrCode/qrcodegen.hpp"
 #include "Sound.h"
 
-// Notification client functions
+
 extern void pico_client_init();
 extern void check_notification();
 
@@ -109,7 +109,7 @@ int main() {
     
     sound_init();
 
-    // Initialize WiFi for notification client
+    
     printf("Initializing WiFi...\n");
     if (cyw43_arch_init()) {
         printf("WiFi init failed\n");
@@ -125,23 +125,23 @@ int main() {
     }
     printf("WiFi connected!\n");
     
-    // Initialize notification client
+    
     pico_client_init();
     
     printf("System ready. Polling backend every 5s...\n");
-    
+     
     absolute_time_t last_check = get_absolute_time();
     
     while (true) {
         sound_check_button();
         
-        // Poll backend every 5 seconds
+        
         if (absolute_time_diff_us(last_check, get_absolute_time()) > 5000000) {
             check_notification();
             last_check = get_absolute_time();
         }
         
-        cyw43_arch_poll();  // Process WiFi events
+        cyw43_arch_poll(); 
         sleep_ms(10);
     }
 }

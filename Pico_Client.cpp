@@ -6,9 +6,9 @@
 #include <string.h>
 #include "Sound.h"
 
-#define BACKEND_HOST "128.0.0.1" //This should be replaced with the actual ip address
-#define BACKEND_PORT 3000 //This should be replaced with the actual port
-#define ENDPOINT_PATH "/api/notification" //This should also be replaced with the actual endpoint path
+#define BACKEND_HOST "51.21.129.98"
+#define BACKEND_PORT 3000
+#define ENDPOINT_PATH "/api/notifications/latest"
 
 static ip_addr_t backend_ip;
 static bool ready = false;
@@ -26,14 +26,34 @@ static err_t receive_callback(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, e
         body += 4;
         int len = p->len - (body - data);
 
-        if (len > 0 && len < 128) {
-            char msg[128] = {0};
-            strncpy(msg, body, len);
-            msg[len] = '\0';
+        if (len > 0 && len < 256) {
+            char json[256] = {0};
+            strncpy(json, body, len);
+            json[len] = '\0';
 
-            if (strlen(msg) > 0 && strcmp(msg, "OK") != 0) {
-                printf("Notification: %s\n", msg);
-                show_notification(msg);
+            // Simple JSON parse: find "message":"..."
+            char *msg_start = strstr(json, "\"message\"");
+            if (msg_start) {
+                msg_start = strchr(msg_start, ':');
+                if (msg_start) {
+                    msg_start++; // skip ':'
+                    while (*msg_start == ' ' || *msg_start == '\t') msg_start++; // skip whitespace
+                    if (*msg_start == '"') {
+                        msg_start++; // skip opening quote
+                        char *msg_end = strchr(msg_start, '"');
+                        if (msg_end) {
+                            int msg_len = msg_end - msg_start;
+                            if (msg_len > 0 && msg_len < 128) {
+                                char msg[128] = {0};
+                                strncpy(msg, msg_start, msg_len);
+                                msg[msg_len] = '\0';
+                                
+                                printf("Notification: %s\n", msg);
+                                show_notification(msg);
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -80,7 +100,7 @@ void check_notification() {
 }
 
 void pico_client_init() {
-    IP4_ADDR(&backend_ip, 128, 0, 0, 1); //This should be replaced with the actual ip address
+    IP4_ADDR(&backend_ip, 51, 21, 129, 98);
     ready = true;
     printf("Backend: %s:%d%s\n", BACKEND_HOST, BACKEND_PORT, ENDPOINT_PATH);
 }
