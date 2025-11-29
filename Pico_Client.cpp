@@ -8,7 +8,7 @@
 
 #define BACKEND_HOST "51.21.129.98"
 #define BACKEND_PORT 3000
-#define ENDPOINT_PATH "/api/notifications/latest"
+#define ENDPOINT_PATH "/notifications"
 
 static ip_addr_t backend_ip;
 static bool ready = false;
