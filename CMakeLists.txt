@@ -40,9 +40,13 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Pico_OLED Pico_OLED.cpp
+add_executable(Pico_OLED 
+                main.cpp
+                DisplayManager.cpp
+                WiFiClient.cpp
+                NotificationHandler.cpp
+                SoundController.cpp
                 QrCode/qrcodegen.cpp
-                Pico_Client.cpp
                 )
 
 
