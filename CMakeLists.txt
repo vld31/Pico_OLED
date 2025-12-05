@@ -31,8 +31,8 @@ include(pico_sdk_import.cmake)
 project(Pico_OLED C CXX ASM)
 
 
-set(WIFI_SSID "WIFI NAME") #Modify name to your network name
-set(WIFI_PASSWORD "WIFI PASSWORD") #Modify this to your network password
+set(WIFI_SSID "id") #Modify name to your network name
+set(WIFI_PASSWORD "pass") #Modify this to your network password
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()

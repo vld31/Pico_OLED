@@ -8,6 +8,7 @@
 #include "Sound.h"
 
 
+extern bool wifi_init();
 extern void pico_client_init();
 extern void check_notification();
 
@@ -86,7 +87,7 @@ static void drawqr(const QrCode &qr){
 }
 
 void funcDrawQr(){
-    const char *text = "https://www.google.com/";
+    const char *text = "https://deskberg.netlify.app/";
     const QrCode qr  = QrCode::encodeText(text, QrCode::Ecc::LOW);
     drawqr(qr);
 }
@@ -109,23 +110,9 @@ int main() {
     
     sound_init();
 
-    
-    printf("Initializing WiFi...\n");
-    if (cyw43_arch_init()) {
-        printf("WiFi init failed\n");
+    if (!wifi_init()) {
         return 1;
     }
-    cyw43_arch_enable_sta_mode();
-    
-    printf("Connecting to WiFi: %s\n", WIFI_SSID);
-    if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, 
-        CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        printf("WiFi connection failed\n");
-        return 1;
-    }
-    printf("WiFi connected!\n");
-    
-    
     pico_client_init();
     
     printf("System ready. Polling backend every 5s...\n");
@@ -133,9 +120,6 @@ int main() {
     absolute_time_t last_check = get_absolute_time();
     
     while (true) {
-        sound_check_button();
-        
-        
         if (absolute_time_diff_us(last_check, get_absolute_time()) > 5000000) {
             check_notification();
             last_check = get_absolute_time();
