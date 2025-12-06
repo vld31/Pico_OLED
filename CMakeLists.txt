@@ -30,9 +30,9 @@ include(pico_sdk_import.cmake)
 
 project(Pico_OLED C CXX ASM)
 
-#Pico and Laptop should be on the same network
-set(WIFI_SSID "WIFI Name") #Modify name to your network name
-set(WIFI_PASSWORD "WIFI Password") #Modify this to your network password
+
+set(WIFI_SSID "id") #Modify name to your network name
+set(WIFI_PASSWORD "pass") #Modify this to your network password
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
@@ -40,9 +40,13 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Pico_OLED Pico_OLED.cpp
+add_executable(Pico_OLED 
+                main.cpp
+                DisplayManager.cpp
+                WiFiClient.cpp
+                NotificationHandler.cpp
+                SoundController.cpp
                 QrCode/qrcodegen.cpp
-                pico_httpd.c
                 )
 
 
@@ -80,7 +84,8 @@ target_include_directories(Pico_OLED PRIVATE
 target_link_libraries(Pico_OLED 
         hardware_spi
         hardware_i2c
-        
+        hardware_pwm
+        hardware_clocks
         )
 
 pico_add_extra_outputs(Pico_OLED)
