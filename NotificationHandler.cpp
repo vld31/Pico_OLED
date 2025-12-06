@@ -84,9 +84,19 @@ err_t NotificationHandler::receive_callback(void *arg, struct tcp_pcb *tpcb, str
     if (!p) {
         if (ctx && ctx->len > 0) {
             ctx->buf[ctx->len] = '\0';
+
             char *body = strstr(ctx->buf, "\r\n\r\n");
+            if (!body) body = strstr(ctx->buf, "\n\n");
+
             if (body) {
-                body += 4;
+                body += (body[1] == '\n') ? 2 : 4; 
+
+                // Debug preview
+                char status_line[64] = {0};
+                sscanf(ctx->buf, "%63[^\r\n]", status_line);
+                printf("HTTP status: %s\n", status_line);
+                printf("Body preview: %.120s\n", body);
+
                 const char *cursor = body;
                 while (1) {
                     const char *msg_key = strstr(cursor, "\"message\"");
@@ -104,6 +114,7 @@ err_t NotificationHandler::receive_callback(void *arg, struct tcp_pcb *tpcb, str
                             char msg[128] = {0};
                             strncpy(msg, cursor, msg_len);
                             msg[msg_len] = '\0';
+                            printf("Parsed message: %s\n", msg);
                             ctx->handler->processMessage(msg);
                         }
                         cursor = end_quote + 1;
@@ -111,6 +122,8 @@ err_t NotificationHandler::receive_callback(void *arg, struct tcp_pcb *tpcb, str
                         break;
                     }
                 }
+            } else {
+                printf("No HTTP body found. Headers preview: %.160s\n", ctx->buf);
             }
         }
         tcp_close(tpcb);
